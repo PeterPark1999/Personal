@@ -151,11 +151,10 @@ a { color: inherit; text-decoration: none; }
   }
 
   var grid = document.getElementById("grid");
-  var shown = [];
 
   function renderGrid(filter) {
     grid.textContent = "";
-    shown = PHOTOS.filter(function (ph) { return !filter || ph.project === filter; });
+    var shown = PHOTOS.filter(function (ph) { return !filter || ph.project === filter; });
     shown.forEach(function (ph, i) {
       var a = el("a", "tile");
       a.href = "img/" + ph.file + ".jpg";
@@ -168,7 +167,7 @@ a { color: inherit; text-decoration: none; }
       if (ph.caption && projects[ph.project]) a.appendChild(el("div", "cap", label(projects[ph.project])));
       a.addEventListener("click", function (e) {
         if (e.metaKey || e.ctrlKey || e.shiftKey) return;
-        e.preventDefault(); open(i);
+        e.preventDefault(); open(ph);
       });
       grid.appendChild(a);
     });
@@ -216,18 +215,31 @@ a { color: inherit; text-decoration: none; }
   }
   window.addEventListener("hashchange", route);
 
-  // 사진 크게 보기
+  // 사진 크게 보기: 누른 사진이 속한 프로젝트의 사진만 넘겨 봐요.
+  // 순서는 PROJECTS의 slides, 없으면 그리드에 나온 순서예요.
   var zoom = document.getElementById("zoom"), zimg = document.getElementById("zimg");
-  var at = 0;
-  function show(i) {
-    at = (i + shown.length) % shown.length;
-    var ph = shown[at];
-    zimg.src = "img/" + ph.file + ".jpg";
-    document.getElementById("zcap").textContent = projects[ph.project] ? label(projects[ph.project]) : "";
-    document.getElementById("zcount").textContent = (at + 1) + " / " + shown.length;
-    var next = new Image(); next.src = "img/" + shown[(at + 1) % shown.length].file + ".jpg";
+  var slides = [], at = 0, slideProject = null;
+  function slidesFor(pid) {
+    var p = projects[pid];
+    if (p && p.slides && p.slides.length) return p.slides.slice();
+    return PHOTOS.filter(function (ph) { return ph.project === pid; }).map(function (ph) { return ph.file; });
   }
-  function open(i) { show(i); zoom.hidden = false; document.body.style.overflow = "hidden"; }
+  function show(i) {
+    at = (i + slides.length) % slides.length;
+    zimg.src = "img/" + slides[at] + ".jpg";
+    zimg.alt = slideProject ? slideProject.title : "";
+    document.getElementById("zcap").textContent = slideProject ? label(slideProject) : "";
+    document.getElementById("zcount").textContent = (at + 1) + " / " + slides.length;
+    if (slides.length > 1) { var next = new Image(); next.src = "img/" + slides[(at + 1) % slides.length] + ".jpg"; }
+  }
+  function open(ph) {
+    slides = slidesFor(ph.project);
+    slideProject = projects[ph.project] || null;
+    var i = slides.indexOf(ph.file);
+    if (i < 0) { slides.unshift(ph.file); i = 0; }
+    document.getElementById("zprev").hidden = document.getElementById("znext").hidden = slides.length < 2;
+    show(i); zoom.hidden = false; document.body.style.overflow = "hidden";
+  }
   function close() { zoom.hidden = true; document.body.style.overflow = ""; }
   document.getElementById("zprev").onclick = function () { show(at - 1); };
   document.getElementById("znext").onclick = function () { show(at + 1); };
