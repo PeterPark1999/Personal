@@ -161,7 +161,7 @@ a { color: inherit; text-decoration: none; }
       a.href = "img/" + ph.file + ".jpg";
       var img = el("img");
       img.src = "img/" + ph.file + "-s.jpg";
-      img.width = ph.w * 300; img.height = ph.h * 300;
+      img.width = ph.w; img.height = ph.h;
       img.alt = projects[ph.project] ? projects[ph.project].title : "";
       if (i > 15) img.loading = "lazy";
       a.appendChild(img);
