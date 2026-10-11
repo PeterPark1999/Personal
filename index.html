@@ -1,0 +1,362 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>gyu — Photographs</title>
+<meta name="description" content="gyu — architecture and interior photography. 건축·인테리어 사진.">
+<meta property="og:type" content="website">
+<meta property="og:title" content="gyu — Photographs">
+<meta property="og:description" content="Architecture and interior photography. 건축·인테리어 사진.">
+<meta property="og:image" content="https://peterpark1999.github.io/Personal/img/dsc9142.jpg">
+<meta property="og:url" content="https://peterpark1999.github.io/Personal/">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Newsreader:ital,opsz,wght@0,6..72,400;1,6..72,400;1,6..72,500&family=Noto+Serif+KR:wght@400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="tokens.css">
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; }
+body {
+  background: var(--paper); color: var(--ink-2);
+  font: 400 var(--t-body)/1.5 var(--f-display);
+  -webkit-font-smoothing: antialiased; overflow: hidden;
+  transition: background .5s var(--ease), color .5s var(--ease);
+}
+body[data-paper="bone"] { --paper: var(--paper-bone); }
+body[data-paper="ink"] { --paper: var(--paper-ink); --ink: #ece8e3; --ink-2: #b4aea8; --ink-3: #807a75; --line: rgba(255,255,255,.12);
+  --panel-bg: rgba(255,255,255,.04); --panel-line: rgba(255,255,255,.10); }
+button, input { font: inherit; color: inherit; }
+.label { font: 500 var(--t-label)/1 var(--f-mono); letter-spacing: var(--track); text-transform: uppercase; color: var(--ink-3); }
+
+/* ── 좌상단 머리 ── */
+.head { position: fixed; top: var(--gutter); left: var(--gutter); z-index: 3; max-width: 260px; }
+.head .label { display: block; margin-bottom: 18px; }
+.title { font: italic 400 var(--t-title)/var(--t-title-lh) var(--f-display); color: var(--ink); letter-spacing: -0.015em; }
+.title span { display: block; }
+.title span + span { padding-left: var(--t-title-indent); }
+.title-ko { font: 400 12px/1 var(--f-ko); color: var(--ink-3); margin-top: 12px; }
+.blurb { font-style: italic; margin-top: 14px; max-width: 220px; }
+
+/* ── 우상단 칩 ── */
+.chip { position: fixed; top: var(--gutter); right: var(--gutter); z-index: 3; display: flex; gap: 8px; align-items: center;
+  border: 1px solid var(--panel-line); border-radius: 999px; padding: 6px 10px; background: var(--panel-bg); }
+.chip i { width: 6px; height: 6px; border-radius: 50%; background: #6f9a5b; }
+.chip, .chip a { color: inherit; text-decoration: none; }
+
+/* ── 무대(사진) ── */
+.stage { position: fixed; inset: var(--stage-pad-y) var(--stage-pad-x) 120px; display: flex; align-items: center; justify-content: center; gap: 24px;
+  touch-action: pan-y; cursor: grab; user-select: none; }
+.stage.dragging { cursor: grabbing; }
+.stage figure { position: relative; height: 100%; display: flex; align-items: center; justify-content: center; flex: 1 1 0; min-width: 0;
+  transform: scale(var(--scale, 1)); transition: transform .5s var(--ease); }
+.stage img { width: auto; height: auto; max-width: 100%; max-height: 100%; object-fit: contain; display: block; box-shadow: var(--shadow-print); opacity: 0; transition: opacity .35s var(--ease); }
+.stage img.on { opacity: 1; }
+.stage figcaption { position: absolute; bottom: -26px; left: 0; right: 0; text-align: center; font-style: italic; color: var(--ink-3); }
+body:not(.captions) .stage figcaption { display: none; }
+.stage.bleed { inset: 0; }
+.stage.bleed figure { transform: none; }
+.stage.bleed img { width: 100%; height: 100%; max-width: none; max-height: none; object-fit: cover; box-shadow: none; }
+.stage.sheet { display: grid; grid-template-columns: repeat(5, 1fr); gap: 14px; align-content: center; cursor: default; }
+.stage.sheet figure { height: auto; aspect-ratio: 1; transform: none; }
+.stage.sheet img { cursor: pointer; }
+.stage.sheet figcaption { display: none; }
+.stage.sheet figure.cur img { outline: 1px solid var(--ink); outline-offset: 4px; }
+
+/* ── 하단 썸네일 알약 ── */
+.thumbs { position: fixed; left: 50%; bottom: 40px; transform: translateX(-50%); z-index: 3; display: flex; gap: 6px; align-items: center;
+  padding: 6px 8px; border-radius: 999px; background: var(--panel-bg); border: 1px solid var(--panel-line); backdrop-filter: blur(8px); max-width: 60vw; overflow-x: auto; }
+.thumbs button { flex: none; width: 34px; height: 34px; border-radius: 50%; border: 0; overflow: hidden; cursor: pointer; opacity: .55;
+  transition: opacity .2s, transform .3s var(--ease); background: none; }
+.thumbs button img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.thumbs button:hover { opacity: .9; transform: translateY(-2px); }
+.thumbs button[aria-current="true"] { opacity: 1; box-shadow: 0 0 0 1.5px var(--ink); }
+.thumbs .count { padding: 0 8px 0 4px; }
+
+/* ── 좌하단 안내 + 데이터 줄 ── */
+.foot { position: fixed; left: var(--gutter); bottom: var(--gutter); z-index: 3; max-width: 300px; }
+.note { font-style: italic; margin-bottom: 14px; }
+.note b { font: 500 var(--t-label)/1 var(--f-mono); letter-spacing: var(--track); text-transform: uppercase; color: var(--ink-3); margin-right: 6px; }
+.data { display: flex; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+.data div { padding: 8px 14px 8px 0; margin-right: 14px; border-right: 1px solid var(--line); }
+.data div:last-child { border-right: 0; margin-right: 0; }
+.data dd { font: 500 var(--t-value)/1.2 var(--f-mono); color: var(--ink); margin-top: 6px; white-space: nowrap; }
+.data dd small { font-size: 9px; color: var(--ink-3); margin-left: 2px; }
+.fineprint { font: 400 9px/1.5 var(--f-mono); color: var(--ink-3); margin-top: 10px; }
+
+/* ── 우측 패널 ── */
+.panel { position: fixed; top: 72px; right: var(--gutter); width: var(--panel-w); z-index: 3; padding: 14px; border: 1px solid var(--panel-line);
+  background: var(--panel-bg); backdrop-filter: blur(10px); border-radius: var(--radius); font: 400 var(--t-ui)/1.3 var(--f-mono); }
+.panel section { padding: 12px 0; border-top: 1px solid var(--panel-line); }
+.panel section:first-child { border-top: 0; padding-top: 0; }
+.panel header { display: flex; justify-content: space-between; align-items: baseline; }
+.panel h2 { font: italic 400 20px/1 var(--f-display); color: var(--ink); margin-top: 8px; }
+.panel .label { display: block; margin-bottom: 8px; }
+.seg { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; }
+.btn { border: 1px solid var(--panel-line); background: transparent; border-radius: var(--radius); padding: 8px 4px; cursor: pointer; text-align: center; transition: background .2s, color .2s; }
+.btn:hover { background: rgba(127,127,127,.08); }
+.btn[aria-pressed="true"] { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+.swatches { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+.swatch { border: 1px solid var(--panel-line); background: none; border-radius: var(--radius); padding: 5px; cursor: pointer; text-align: left; }
+.swatch i { display: block; height: 18px; border-radius: 2px; margin-bottom: 5px; border: 1px solid rgba(0,0,0,.08); }
+.swatch[aria-pressed="true"] { border-color: var(--ink); }
+.slider-row { display: flex; justify-content: space-between; }
+.slider-row output { color: var(--ink); }
+input[type=range] { -webkit-appearance: none; appearance: none; width: 100%; height: 18px; background: none; margin: 6px 0 2px; cursor: pointer; }
+input[type=range]::-webkit-slider-runnable-track { height: 1px; background: var(--ink-3); }
+input[type=range]::-moz-range-track { height: 1px; background: var(--ink-3); }
+input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 12px; height: 12px; border-radius: 50%; border: 1px solid var(--ink); background: var(--paper); margin-top: -6px; }
+input[type=range]::-moz-range-thumb { width: 12px; height: 12px; border-radius: 50%; border: 1px solid var(--ink); background: var(--paper); }
+.minmax { display: flex; justify-content: space-between; font-size: 9px; color: var(--ink-3); }
+.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; }
+.grid2 .wide { grid-column: span 2; }
+.checks { display: flex; gap: 12px; align-items: center; margin-top: 10px; }
+.checks label { display: flex; gap: 5px; align-items: center; cursor: pointer; }
+.checks .btn { margin-left: auto; padding: 5px 10px; }
+
+/* ── 우하단 드롭다운 ── */
+.inside { position: fixed; right: var(--gutter); bottom: var(--gutter); width: var(--panel-w); z-index: 3; border-top: 1px solid var(--line); }
+.inside summary { list-style: none; display: flex; justify-content: space-between; padding: 10px 0; cursor: pointer; }
+.inside summary::after { content: "▾"; font-size: 10px; color: var(--ink-3); }
+.inside[open] summary::after { content: "▴"; }
+.inside p { font-style: italic; padding-bottom: 8px; }
+
+/* ── 인덱스 ── */
+.index { position: fixed; inset: 0; overflow-y: auto; padding: 220px var(--gutter) 80px calc(var(--gutter) + 300px); z-index: 2; display: none; }
+body.is-index .index { display: block; }
+body.is-index .stage, body.is-index .thumbs, body.is-index .panel, body.is-index .foot, body.is-index .inside { display: none; }
+.index ol { list-style: none; max-width: 560px; border-top: 1px solid var(--line); }
+.index li a { display: grid; grid-template-columns: 56px 1fr 150px 50px; align-items: baseline; gap: 16px; padding: 14px 0; border-bottom: 1px solid var(--line);
+  color: inherit; text-decoration: none; transition: padding .3s var(--ease); }
+.index li a:hover { padding-left: 10px; }
+.index .t { font: italic 400 30px/1 var(--f-display); color: var(--ink); }
+.index .d { font: 400 11px/1.3 var(--f-mono); }
+.index li.draft { opacity: .4; }
+.peek { position: fixed; right: calc(var(--gutter) + 40px); top: 50%; transform: translateY(-50%); width: 26vw; pointer-events: none; opacity: 0;
+  transition: opacity .3s var(--ease); box-shadow: var(--shadow-print); z-index: 1; }
+.peek.on { opacity: 1; }
+
+/* ── 모바일 ── */
+@media (max-width: 820px) {
+  :root { --gutter: 16px; --t-title: 40px; }
+  body { overflow: auto; }
+  .head, .chip, .foot, .panel, .inside, .thumbs, .stage { position: static; transform: none; }
+  .wrap { display: flex; flex-direction: column; gap: 20px; padding: var(--gutter); }
+  .chip { align-self: flex-start; order: -1; }
+  .head { max-width: none; }
+  .stage { inset: auto; height: auto; flex-direction: column; cursor: default; }
+  .stage figure { height: auto; transform: none; width: 100%; }
+  .stage img { width: 100%; height: auto; max-height: 72vh; object-fit: contain; }
+  .stage figcaption { position: static; margin-top: 8px; }
+  .stage figure { flex-direction: column; }
+  .stage.sheet { grid-template-columns: repeat(3, 1fr); }
+  .thumbs { max-width: 100%; align-self: center; }
+  .panel, .inside { width: 100%; }
+  .foot { max-width: none; }
+  .data { flex-wrap: wrap; }
+  .index { position: static; padding: 0; }
+  .index li a { grid-template-columns: 40px 1fr; }
+  .index .d:nth-child(3), .index .d:nth-child(4) { display: none; }
+  .peek { display: none; }
+}
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+</head>
+<body class="captions" data-paper="paper">
+<div class="wrap">
+  <a class="chip label" href="#/"><i></i>gyu · Photographs</a>
+
+  <header class="head">
+    <span class="label" id="meta">Photographs / No. 001</span>
+    <h1 class="title" id="title"><span>Yaksu</span><span>Bar.</span></h1>
+    <div class="title-ko" id="titleKo"></div>
+    <p class="blurb" id="blurb"></p>
+  </header>
+
+  <main class="stage" id="stage" aria-live="polite"></main>
+
+  <nav class="thumbs" id="thumbs" aria-label="Frames"></nav>
+
+  <aside class="panel" id="panel">
+    <section>
+      <header><span class="label">The project</span><span class="label" id="pno">001 / 006</span></header>
+      <h2 id="ptitle">Yaksu Bar</h2>
+    </section>
+    <section>
+      <span class="label">View</span>
+      <div class="seg" role="group">
+        <button class="btn" data-view="single" aria-pressed="true">Single</button>
+        <button class="btn" data-view="pair" aria-pressed="false">Pair</button>
+        <button class="btn" data-view="sheet" aria-pressed="false">Sheet</button>
+      </div>
+    </section>
+    <section>
+      <span class="label">Paper</span>
+      <div class="swatches">
+        <button class="swatch" data-paper="paper" aria-pressed="true"><i style="background:#e6e2df"></i>Paper</button>
+        <button class="swatch" data-paper="bone" aria-pressed="false"><i style="background:#efebe4"></i>Bone</button>
+        <button class="swatch" data-paper="ink" aria-pressed="false"><i style="background:#171615"></i>Ink</button>
+      </div>
+    </section>
+    <section>
+      <div class="slider-row"><span class="label">Scale</span><output id="scaleOut">1.00</output></div>
+      <input type="range" id="scale" min="0.6" max="1" step="0.01" value="1" aria-label="Photo scale">
+      <div class="minmax"><span>print</span><span>wall</span></div>
+    </section>
+    <section>
+      <div class="grid2">
+        <button class="btn" id="prev">← Prev</button>
+        <button class="btn" id="next">Next →</button>
+        <button class="btn" id="bleed" aria-pressed="false">Full bleed</button>
+        <button class="btn" id="toIndex">Index</button>
+      </div>
+      <div class="checks">
+        <label><input type="checkbox" id="cap" checked> Captions</label>
+        <label><input type="checkbox" id="auto"> Auto</label>
+        <button class="btn" id="pause" hidden>Pause</button>
+      </div>
+    </section>
+  </aside>
+
+  <section class="foot">
+    <p class="note" id="note"></p>
+    <dl class="data" id="data"></dl>
+    <p class="fineprint">All photographs © gyu. Shot on Sony A7CR. Not for reuse without permission.</p>
+  </section>
+
+  <details class="inside">
+    <summary class="label">Inside the project</summary>
+    <p id="credits"></p>
+  </details>
+</div>
+
+<section class="index" id="index" aria-label="Index">
+  <ol id="list"></ol>
+</section>
+<img class="peek" id="peek" alt="">
+
+<script src="projects.js"></script>
+<script>
+const P = window.PROJECTS, $ = (s) => document.querySelector(s);
+const state = { p: P[0], i: 0, view: "single", timer: null };
+const pad = (n) => String(n).padStart(2, "0");
+
+/* ── 라우팅: #/ = 인덱스, #/slug/3 = 프로젝트 3번째 사진 ── */
+function route() {
+  const [, slug, n] = location.hash.split("/");
+  const p = P.find((x) => x.slug === slug && x.frames.length);
+  document.body.classList.toggle("is-index", !p);
+  if (!p) return renderIndex();
+  state.p = p; state.i = Math.min(Math.max((+n || 1) - 1, 0), p.frames.length - 1);
+  renderProject();
+}
+const go = (i) => { const len = state.p.frames.length; location.hash = `#/${state.p.slug}/${((i % len) + len) % len + 1}`; };
+
+function renderProject() {
+  const { p, i } = state, f = p.frames[i];
+  $("#meta").textContent = `Photographs / No. ${p.no}`;
+  $("#title").innerHTML = p.title.map((t) => `<span>${t}</span>`).join("");
+  $("#titleKo").textContent = p.titleKo || "";
+  $("#blurb").textContent = p.blurb || "";
+  $("#pno").textContent = `${p.no} / ${pad(P.length).padStart(3, "0")}`;
+  $("#ptitle").textContent = p.title.join(" ").replace(/\.$/, "");
+  $("#note").innerHTML = `<b>How</b>${p.note || ""}`;
+  $("#credits").textContent = p.credits || "";
+  $("#data").innerHTML = [...p.data, ["Frame", `${pad(i + 1)}<small>/ ${pad(p.frames.length)}</small>`]]
+    .map(([k, v]) => `<div><dt class="label">${k}</dt><dd>${v}</dd></div>`).join("");
+  document.title = `${p.title.join(" ")} — gyu`;
+  renderStage(); renderThumbs(); preload(i + 1); preload(i - 1);
+}
+
+function figure(f, idx, extra = "") {
+  return `<figure class="${extra}" data-i="${idx}"><img src="${f.src}" width="${f.w}" height="${f.h}" alt="${f.caption}" draggable="false" onload="this.classList.add('on')"><figcaption>${f.caption}</figcaption></figure>`;
+}
+function renderStage() {
+  const { p, i, view } = state, st = $("#stage");
+  st.className = "stage" + (view === "sheet" ? " sheet" : "") + ($("#bleed").getAttribute("aria-pressed") === "true" && view === "single" ? " bleed" : "");
+  if (view === "sheet") st.innerHTML = p.frames.map((f, k) => figure(f, k, k === i ? "cur" : "")).join("");
+  else if (view === "pair") st.innerHTML = figure(p.frames[i], i) + figure(p.frames[(i + 1) % p.frames.length], (i + 1) % p.frames.length);
+  else st.innerHTML = figure(p.frames[i], i);
+}
+function renderThumbs() {
+  const { p, i } = state;
+  $("#thumbs").innerHTML = p.frames.map((f, k) =>
+    `<button aria-current="${k === i}" aria-label="Frame ${k + 1}" data-i="${k}"><img src="${f.src}" alt="" loading="lazy"></button>`).join("") +
+    `<span class="count label">${pad(i + 1)} / ${pad(p.frames.length)}</span>`;
+  $("#thumbs").querySelector('[aria-current="true"]')?.scrollIntoView({ inline: "center", block: "nearest" });
+}
+function preload(k) { const f = state.p.frames.at(k % state.p.frames.length); if (f) new Image().src = f.src; }
+
+function renderIndex() {
+  $("#meta").textContent = "gyu / Architectural Photography";
+  $("#title").innerHTML = "<span>Index.</span>";
+  $("#titleKo").textContent = "";
+  $("#blurb").textContent = "Rooms, buildings and the light inside them.";
+  document.title = "gyu — Photographs";
+  $("#list").innerHTML = P.map((p) => {
+    const d = Object.fromEntries(p.data);
+    const who = d.Design || d.Architect || d.Place || "";
+    return `<li class="${p.frames.length ? "" : "draft"}"><a href="#/${p.slug}/1" data-slug="${p.slug}">
+      <span class="label">No. ${p.no}</span><span class="t">${p.title.join(" ")}</span>
+      <span class="d">${who}</span><span class="d">${p.frames.length ? pad(p.frames.length) + " fr" : "soon"}</span></a></li>`;
+  }).join("");
+}
+
+/* ── 조작 ── */
+document.addEventListener("click", (e) => {
+  const t = e.target.closest("button, .stage.sheet img"); if (!t) return;
+  if (t.dataset.view) { state.view = t.dataset.view; document.querySelectorAll("[data-view]").forEach((b) => b.setAttribute("aria-pressed", b === t)); renderStage(); }
+  else if (t.dataset.paper) { document.body.dataset.paper = t.dataset.paper; document.querySelectorAll(".swatch").forEach((b) => b.setAttribute("aria-pressed", b === t)); }
+  else if (t.closest("#thumbs") && t.dataset.i) go(+t.dataset.i);
+  else if (t.matches(".stage.sheet img")) { state.view = "single"; document.querySelectorAll("[data-view]").forEach((b) => b.setAttribute("aria-pressed", b.dataset.view === "single")); go(+t.closest("figure").dataset.i); }
+  else if (t.id === "prev") go(state.i - 1);
+  else if (t.id === "next") go(state.i + 1);
+  else if (t.id === "bleed") { t.setAttribute("aria-pressed", t.getAttribute("aria-pressed") !== "true"); renderStage(); }
+  else if (t.id === "toIndex") location.hash = "#/";
+  else if (t.id === "pause") { $("#auto").checked = false; $("#auto").dispatchEvent(new Event("change")); }
+});
+$("#scale").addEventListener("input", (e) => { document.documentElement.style.setProperty("--scale", e.target.value); $("#scaleOut").textContent = (+e.target.value).toFixed(2); });
+$("#cap").addEventListener("change", (e) => document.body.classList.toggle("captions", e.target.checked));
+$("#auto").addEventListener("change", (e) => {
+  clearInterval(state.timer); $("#pause").hidden = !e.target.checked;
+  if (e.target.checked) state.timer = setInterval(() => go(state.i + 1), 4000);
+});
+document.addEventListener("keydown", (e) => {
+  if (document.body.classList.contains("is-index")) return;
+  if (e.key === "ArrowRight") go(state.i + 1);
+  if (e.key === "ArrowLeft") go(state.i - 1);
+  if (e.key === "Escape") location.hash = "#/";
+});
+
+/* 드래그: 사진이 손을 따라오다 놓으면 탄성 있게 돌아오거나 넘어간다 */
+let drag = null;
+$("#stage").addEventListener("pointerdown", (e) => {
+  if (state.view === "sheet" || e.button !== 0) return;
+  drag = { x: e.clientX, el: e.currentTarget }; drag.el.classList.add("dragging"); drag.el.setPointerCapture(e.pointerId);
+});
+$("#stage").addEventListener("pointermove", (e) => {
+  if (!drag) return; const dx = e.clientX - drag.x;
+  drag.el.querySelectorAll("img").forEach((im) => { im.style.transition = "none"; im.style.transform = `translateX(${dx * 0.6}px) rotate(${dx * 0.004}deg)`; });
+});
+$("#stage").addEventListener("pointerup", (e) => {
+  if (!drag) return; const dx = e.clientX - drag.x;
+  drag.el.classList.remove("dragging");
+  drag.el.querySelectorAll("img").forEach((im) => { im.style.transition = "transform .6s cubic-bezier(.3,1.6,.5,1), opacity .35s"; im.style.transform = ""; });
+  drag = null;
+  if (Math.abs(dx) > 70) go(state.i + (dx < 0 ? 1 : -1));
+});
+
+/* 인덱스: 행에 올리면 첫 사진이 오른쪽에 뜬다 */
+$("#list").addEventListener("mouseover", (e) => {
+  const a = e.target.closest("a"); const p = a && P.find((x) => x.slug === a.dataset.slug);
+  if (p && p.frames.length) { $("#peek").src = p.frames[0].src; $("#peek").classList.add("on"); } else $("#peek").classList.remove("on");
+});
+$("#list").addEventListener("mouseleave", () => $("#peek").classList.remove("on"));
+
+window.addEventListener("hashchange", route);
+if (!location.hash) location.replace(`#/${P[0].slug}/1`);
+route();
+</script>
+</body>
+</html>
