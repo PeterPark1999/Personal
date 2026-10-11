@@ -1,4 +1,5 @@
-// 사이트에 나오는 모든 내용. 이 파일만 고치면 돼요.
+// 사이트에 나오는 모든 내용. Drive 사진 폴더를 읽어 tools/build_site.py가 만들어요.
+// 고칠 때는 이 파일 대신 각 프로젝트의 project.txt와 06_website, order.txt·info.txt를 고쳐요.
 
 // 프로젝트 목록 (Index 화면 순서)
 // title: 프로젝트 이름, credit: 설계자 (예: "atelier ah", 비워두면 생략)
